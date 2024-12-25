@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import './App.css';
 
 function App() {
@@ -9,7 +8,8 @@ function App() {
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [billAmount, setBillAmount] = useState(0);
-
+  const [paymentDone, setPaymentDone] = useState('No'); // State for payment status
+  const [submitted, setSubmitted] = useState(false); // State for form submission
 
   // Function to calculate the bill and apply discount if applicable
   const calculateBill = (adults, children) => {
@@ -37,43 +37,42 @@ function App() {
     const newBillAmount = calculateBill(adults, childrenCount);
     setBillAmount(newBillAmount);
   };
-  // https://script.google.com/macros/s/AKfycbyEuvXGEZTPf55RkwP5lFMLEdUmjze5AW37g3JGG6d8iBrqWc3HQEw9XiusA_WiGDGO/exec
+
+  const handlePaymentDoneChange = (e) => {
+    setPaymentDone(e.target.value); // Update payment status
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const url = " https://script.google.com/macros/s/AKfycbyEuvXGEZTPf55RkwP5lFMLEdUmjze5AW37g3JGG6d8iBrqWc3HQEw9XiusA_WiGDGO/exec";
-    fetch(url,{
-      method:"POST",
-      headers:{"Content-Type" : "application/x-www-form-urlencoded"},
-      body:(`name=${e.target.name.value}&email=${e.target.email.value}&phone=${e.target.phone.value}&adults=${e.target.adults.value}&children=${e.target.children.value}&billAmount=${e.target.billAmount.value}`)
+    const url = "https://script.google.com/macros/s/AKfycbwPJqAPCNzLAZNk8JM0hB_ggslq5yHG9kZH3SwZcYHXK5M_gVc_sq97ym9WdyAsV1ih/exec";
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: (
+        `name=${e.target.name.value}&email=${e.target.email.value}&phone=${e.target.phone.value}&adults=${e.target.adults.value}&children=${e.target.children.value}&billAmount=${e.target.billAmount.value}&paymentDone=${e.target.paymentDone.value}`
+      )
     }).then(res => res.text()).then(data => {
-      alert(data)
-    }).catch(error=>console.log(error))
+      setSubmitted(true); // Show submission message as modal
+      setName('');
+      setEmail('');
+      setPhone('');
+      setAdults(0);
+      setChildren(0);
+      setBillAmount(0);
+      setPaymentDone('No');
+    }).catch(error => console.log(error));
+  };
 
-    // // Send data to backend for Google Sheets
-    // try {
-    //   await axios.post('http://localhost:5000/addData', {
-    //     name,
-    //     email,
-    //     phone,
-    //     adults,
-    //     children,
-    //     billAmount,
-    //   });
-    //   alert(`Booking Confirmed. Total Bill: ₹${billAmount}`);
-    // } catch (error) {
-    //   console.error('Error submitting data:', error);
-    //   alert('There was an error submitting the form.');
-    // }
-    // console.log(name,email,phone, adults,children,billAmount);
-    
-    // Razorpay payment logic can be integrated here
+  const handleCloseModal = () => {
+    setSubmitted(false); // Close the modal when clicking 'Close'
   };
 
   return (
     <div className="container">
-      <h1 className="heading">Booking Form</h1>
+      <h1 className="heading">Registration Form</h1>
+      <h2 className="heading-sec">New Year Celebration at Hotel Aaradhya</h2>
+      <h2 className="heading-sec">2025</h2>
       <form onSubmit={handleSubmit} className="form">
         <div className="input-group">
           <label htmlFor="name">Name</label>
@@ -140,13 +139,62 @@ function App() {
             readOnly
           />
         </div>
+        
+        {/* UPI ID and QR Code */}
+        <div className="input-group">
+          <label htmlFor="upiId">UPI ID</label>
+          <input
+            type="text"
+            id="upiId"
+            className="input"
+            value="8766556890@okbizaxis"
+            readOnly
+          />
+        </div>
+        <div className="input-group">
+          <label htmlFor="upiQr">Scan QR Code</label>
+          <img src="QR.jpg" alt="UPI QR" className="qr-image" />
+        </div>
+        
+        {/* Payment Status Dropdown */}
+        <div className="input-group">
+          <label htmlFor="paymentDone">Payment Done</label>
+          <select
+            id="paymentDone"
+            value={paymentDone}
+            onChange={handlePaymentDoneChange}
+            className="input"
+            required
+          >
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </div>
+
+        {paymentDone === 'No' && (
+          <p className="warning-text"> You can pay on the event day. If payment is not done, table reservation is not guaranteed. </p>
+        )}
+        {paymentDone === 'Yes' && (
+          <p className="warning-text" style={{color:'green'}}> Your Booking Confirmation will be sent by Email/Whatsapp Provided.</p>
+        )}
+
         <button
           type="submit"
           className="submit-button"
         >
-          Confirm Booking and Payment
+          Confirm 
         </button>
       </form>
+
+      {/* Modal for Success Message */}
+      {submitted && (
+        <div className="modal">
+          <div className="modal-content">
+            <span className="close-button" onClick={handleCloseModal}>&times;</span>
+            <p>Your details have been recorded successfully.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
